@@ -1,45 +1,56 @@
 pipeline {
-
   agent {
     kubernetes {
       label 'docker-agent'
+      yaml """
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: kaniko
+    image: gcr.io/kaniko-project/executor:debug
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: docker-config
+      mountPath: /kaniko/.docker
+  volumes:
+  - name: docker-config
+    secret:
+      secretName: regcred
+"""
     }
   }
-  
-  environment {
-    DOCKER_CONFIG = "/kaniko/.docker"  // 🟢 Required for Kaniko to find credentials
-  }
-  
+
   stages {
-    stage('Kaniko Build & Push Image') {
+    stage('Debug Docker Config') {
       steps {
         container('kaniko') {
-          script {
-            sh '''
-              echo ">> Debug Docker config"
-              ls -la $DOCKER_CONFIG
-              cat $DOCKER_CONFIG/config.json || echo "config.json not found"
-
-              echo ">> Starting Kaniko build"
-              /kaniko/executor --dockerfile `pwd`/Dockerfile \
-                               --context `pwd` \
-                               --destination=aesaganda/kaniko-test:${BUILD_NUMBER}
-            '''
-          }
+          sh '''
+            echo "Listing /kaniko/.docker directory:"
+            ls -la /kaniko/.docker
+            echo "Contents of config.json:"
+            cat /kaniko/.docker/config.json || echo "config.json not found"
+          '''
         }
       }
     }
 
-    // stage('Deploy App to Kubernetes') {     
+    // stage('Kaniko Build & Push Image') {
     //   steps {
-    //     container('kubectl') {
-    //       withCredentials([file(credentialsId: 'mykubeconfig', variable: 'KUBECONFIG')]) {
-    //         sh 'sed -i "s/<TAG>/${BUILD_NUMBER}/" myweb.yaml'
-    //         sh 'kubectl apply -f myweb.yaml'
+    //     container('kaniko') {
+    //       script {
+    //         sh '''
+    //           /kaniko/executor \
+    //             --dockerfile `pwd`/Dockerfile \
+    //             --context `pwd` \
+    //             --destination=aesaganda/kaniko-test:${BUILD_NUMBER} \
+    //             --cache=true
+    //         '''
     //       }
     //     }
     //   }
     // }
-  
   }
 }
