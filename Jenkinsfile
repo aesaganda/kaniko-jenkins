@@ -5,17 +5,25 @@ pipeline {
       label 'docker-agent'
     }
   }
-
+  
+  environment {
+    DOCKER_CONFIG = "/kaniko/.docker"  // 🟢 Required for Kaniko to find credentials
+  }
+  
   stages {
-
     stage('Kaniko Build & Push Image') {
       steps {
         container('kaniko') {
           script {
             sh '''
-            /kaniko/executor --dockerfile `pwd`/Dockerfile \
-                             --context `pwd` \
-                             --destination=aesaganda/kaniko-test:${BUILD_NUMBER}
+              echo ">> Debug Docker config"
+              ls -la $DOCKER_CONFIG
+              cat $DOCKER_CONFIG/config.json || echo "config.json not found"
+
+              echo ">> Starting Kaniko build"
+              /kaniko/executor --dockerfile `pwd`/Dockerfile \
+                               --context `pwd` \
+                               --destination=aesaganda/kaniko-test:${BUILD_NUMBER}
             '''
           }
         }
