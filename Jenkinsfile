@@ -2,7 +2,7 @@ pipeline {
 
   agent {
     kubernetes {
-      label docker-agent
+      label 'docker-agent'
     }
   }
 
