@@ -33,27 +33,27 @@ spec:
           sh '''
             echo "Listing /kaniko/.docker directory:"
             ls -la /kaniko/.docker
-            echo "Contents of .dockerconfigjson:"
-            cat /kaniko/.docker/.dockerconfigjson || echo ".dockerconfigjson not found"
+            echo "Contents of config.json:"
+            cat /kaniko/.docker/config.json || echo "config.json not found"
           '''
         }
       }
     }
 
-    // stage('Kaniko Build & Push Image') {
-    //   steps {
-    //     container('kaniko') {
-    //       script {
-    //         sh '''
-    //           /kaniko/executor \
-    //             --dockerfile `pwd`/Dockerfile \
-    //             --context `pwd` \
-    //             --destination=aesaganda/kaniko-test:${BUILD_NUMBER} \
-    //             --cache=true
-    //         '''
-    //       }
-    //     }
-    //   }
-    // }
+    stage('Kaniko Build & Push Image') {
+      steps {
+        container('kaniko') {
+          script {
+            sh '''
+              /kaniko/executor \
+                --dockerfile `pwd`/Dockerfile \
+                --context `pwd` \
+                --destination=aesaganda/kaniko-test:${BUILD_NUMBER} \
+                --cache=true
+            '''
+          }
+        }
+      }
+    }
   }
 }
